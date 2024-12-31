@@ -74,7 +74,7 @@ pygame.display.set_caption("Fireworks Game")
 
 clock = pygame.time.Clock()
 
-names = ["Actiup", "Sếp Tuấn", "Anh Tài", "Anh Chung", "Anh Duy", "Anh Vương", "Thành", "Nghĩa"]
+names = ["Kai", "Kiera", "Anh Chung", "Vưnn", "Chí hùa hùa"]
 name_index = 0
 
 # Add after creating assets directory, before SOUND_FILES
@@ -130,15 +130,112 @@ class Firework:
         self.y = y
         self.color = random.choice(BRIGHT_COLORS)
         self.radius = random.randint(4, 8)
-        self.velocity = random.uniform(-10, -6)
+        self.velocity = random.uniform(-8, -5)
         self.sparks = []
         self.name_sparks = []
         self.exploded = False
         self.explosion_radius = random.randint(20, 40)
-        # Chỉ 30% pháo hoa sẽ có tên
-        self.show_name = random.random() < 0.3
+        self.type = random.choice(['normal', 'snake', 'chihuahua', 'rocket'])
+        self.show_name = self.type == 'normal' and random.random() < 0.3
         if sounds['firework_sound']:
             sounds['firework_sound'].play()
+
+    def create_snake_sparks(self):
+        snake_length = random.randint(100, 150)
+        num_segments = 30
+        for i in range(num_segments):
+            t = i / num_segments
+            x = self.x + snake_length * 0.5 * math.sin(t * 4 * math.pi)
+            y = self.y - snake_length * t
+            for _ in range(5):
+                offset_x = random.uniform(-5, 5)
+                offset_y = random.uniform(-5, 5)
+                self.sparks.append(Spark(
+                    x + offset_x,
+                    y + offset_y,
+                    random.uniform(-0.1, 0.1),
+                    random.uniform(-0.1, 0.1),
+                    (34, 139, 34),
+                    special_effect=True
+                ))
+        
+        head_x = self.x + snake_length * 0.5 * math.sin(4 * math.pi)
+        head_y = self.y - snake_length
+        for _ in range(15):
+            self.sparks.append(Spark(
+                head_x + random.uniform(-8, 8),
+                head_y + random.uniform(-8, 8),
+                random.uniform(-0.1, 0.1),
+                random.uniform(-0.1, 0.1),
+                (255, 0, 0),
+                special_effect=True
+            ))
+
+    def create_chihuahua_sparks(self):
+        size = random.randint(60, 80)
+        
+        for _ in range(40):
+            x = random.uniform(-size/2, size/2)
+            y = random.uniform(-size/3, size/3)
+            self.sparks.append(Spark(
+                self.x + x,
+                self.y + y,
+                random.uniform(-0.1, 0.1),
+                random.uniform(-0.1, 0.1),
+                (139, 69, 19),
+                special_effect=True
+            ))
+        
+        head_size = size * 0.4
+        for _ in range(30):
+            x = random.uniform(-head_size/2, head_size/2)
+            y = random.uniform(-head_size/2, head_size/2)
+            self.sparks.append(Spark(
+                self.x + size/2 + x,
+                self.y - size/4 + y,
+                random.uniform(-0.1, 0.1),
+                random.uniform(-0.1, 0.1),
+                (139, 69, 19),
+                special_effect=True
+            ))
+        
+        for ear_side in [-1, 1]:
+            for _ in range(15):
+                x = random.uniform(-5, 5)
+                y = random.uniform(-15, 0)
+                self.sparks.append(Spark(
+                    self.x + size/2 + ear_side * head_size/2 + x,
+                    self.y - size/4 - head_size/2 + y,
+                    random.uniform(-0.1, 0.1),
+                    random.uniform(-0.1, 0.1),
+                    (139, 69, 19),
+                    special_effect=True
+                ))
+
+    def create_rocket_sparks(self):
+        rocket_height = random.randint(80, 120)
+        
+        for _ in range(50):
+            x = random.uniform(-8, 8)
+            y = random.uniform(-rocket_height, 0)
+            self.sparks.append(Spark(
+                self.x + x,
+                self.y + y,
+                random.uniform(-0.5, 0.5),
+                random.uniform(-1, 1),
+                (255, 0, 0)  # Màu đỏ
+            ))
+        
+        for _ in range(30):
+            angle = random.uniform(-0.5, 0.5)
+            speed = random.uniform(2, 5)
+            self.sparks.append(Spark(
+                self.x,
+                self.y,
+                speed * math.cos(angle),
+                speed * math.sin(angle) + 2,
+                (255, 165, 0)
+            ))
 
     def update(self):
         if not self.exploded:
@@ -151,17 +248,22 @@ class Firework:
         self.exploded = True
         if sounds['firework_sound']:
             sounds['firework_sound'].play()
-        
-        # Tăng số lượng tia lửa lên
-        num_sparks = random.randint(200, 300)
-        for _ in range(num_sparks):
-            angle = random.uniform(0, 2 * math.pi)
-            speed = random.uniform(3, 8)
-            vx = speed * math.cos(angle)
-            vy = speed * math.sin(angle)
-            self.sparks.append(Spark(self.x, self.y, vx, vy, self.color))
 
-        # Chỉ hiển thị tên nếu show_name là True
+        if self.type == 'snake':
+            self.create_snake_sparks()
+        elif self.type == 'chihuahua':
+            self.create_chihuahua_sparks()
+        elif self.type == 'rocket':
+            self.create_rocket_sparks()
+        else:
+            num_sparks = random.randint(200, 300)
+            for _ in range(num_sparks):
+                angle = random.uniform(0, 2 * math.pi)
+                speed = random.uniform(3, 8)
+                vx = speed * math.cos(angle)
+                vy = speed * math.sin(angle)
+                self.sparks.append(Spark(self.x, self.y, vx, vy, self.color))
+
         if self.show_name:
             self.name = names[name_index]
             name_index = (name_index + 1) % len(names)
@@ -181,7 +283,6 @@ class Firework:
                 spark.update()
                 spark.draw(surface)
 
-            # Chỉ vẽ tên nếu show_name là True và có thuộc tính font
             if self.show_name and hasattr(self, 'font'):
                 for offset_x, offset_y in [(-3,0), (3,0), (0,-3), (0,3), (-3,-3), (-3,3), (3,-3), (3,3)]:
                     text_outline = self.font.render(self.name, True, (0, 0, 0))
@@ -193,30 +294,35 @@ class Firework:
                 surface.blit(text_surface, text_rect)
 
 class Spark:
-    def __init__(self, x, y, vx, vy, color):
+    def __init__(self, x, y, vx, vy, color, special_effect=False):
         self.x = x
         self.y = y
         self.vx = vx
         self.vy = vy
         self.color = color
-        self.lifetime = random.randint(40, 70)  # Longer lifetime
+        self.lifetime = random.randint(100, 150) if special_effect else random.randint(60, 100)
         self.original_lifetime = self.lifetime
-        self.size = random.uniform(1.5, 3.0)  # Larger sparks
+        self.size = random.uniform(1.5, 3.0)
+        self.special_effect = special_effect
 
     def update(self):
         self.x += self.vx
         self.y += self.vy
-        self.vy += 0.1
+        if not self.special_effect:
+            self.vy += 0.05
         self.lifetime -= 1
 
     def draw(self, surface):
         if self.lifetime > 0:
-            alpha = int((self.lifetime / self.original_lifetime) * 255)
+            if self.special_effect and self.lifetime < self.original_lifetime * 0.3:
+                alpha = int((self.lifetime / (self.original_lifetime * 0.3)) * 255)
+            else:
+                alpha = int((self.lifetime / self.original_lifetime) * 255)
+            
             radius = max(1, self.size * (self.lifetime / self.original_lifetime))
-
-            for r in range(3):
-                glow_radius = radius * (3-r)/2
-                glow_alpha = alpha // (r+1)
+            for r in range(4):
+                glow_radius = radius * (4-r)/2
+                glow_alpha = min(alpha // (r+1), 255)
                 color = (*self.color[:3], glow_alpha)
                 pygame.draw.circle(surface, color, (int(self.x), int(self.y)), int(glow_radius))
 
@@ -250,7 +356,7 @@ frame_count = 0
 running = True
 clock = pygame.time.Clock()
 countdown_start_time = pygame.time.get_ticks()
-last_countdown_number = COUNTDOWN_DURATION + 1  # For countdown sound tracking
+last_countdown_number = COUNTDOWN_DURATION + 1
 
 background_music_started = False
 
@@ -313,10 +419,14 @@ while running:
 
     elif fireworks_started:
         frame_count += 1
-        if frame_count % 60 == 0:  # Giảm thời gian chờ giữa các đợt bắn (từ 120 xuống 60)
-            for _ in range(random.randint(2, 4)):  # Tăng số lượng pháo hoa mỗi đợt
+        if frame_count % 60 == 0:
+            num_fireworks = random.randint(2, 4)
+            for _ in range(num_fireworks):
                 x = random.randint(100, WIDTH - 100)
-                fireworks.append(Firework(x, HEIGHT))
+                firework = Firework(x, HEIGHT)
+                if _ == 0 and random.random() < 0.5:
+                    firework.type = random.choice(['snake', 'chihuahua'])
+                fireworks.append(firework)
 
         for firework in fireworks[:]:
             firework.update()
