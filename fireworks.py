@@ -63,7 +63,7 @@ BRIGHT_COLORS = [
 ]
 
 # Countdown state
-COUNTDOWN_DURATION = 3  # seconds
+COUNTDOWN_DURATION = 10  # seconds
 countdown_start_time = None
 show_countdown = True
 show_new_year = False
@@ -74,7 +74,7 @@ pygame.display.set_caption("Fireworks Game")
 
 clock = pygame.time.Clock()
 
-names = ["Kai", "Kiera", "Anh Chung", "Vưnn"]  # Example with proper Vietnamese characters
+names = ["Actiup", "Sếp Tuấn", "Anh Tài", "Anh Chung", "Anh Duy", "Anh Vương", "Thành", "Nghĩa"]
 name_index = 0
 
 # Add after creating assets directory, before SOUND_FILES
@@ -306,7 +306,7 @@ while running:
 
     elif fireworks_started:
         frame_count += 1
-        if frame_count % 90 == 0:
+        if frame_count % 120 == 0:
             for _ in range(random.randint(1, 2)):
                 x = random.randint(100, WIDTH - 100)
                 fireworks.append(Firework(x, HEIGHT))
