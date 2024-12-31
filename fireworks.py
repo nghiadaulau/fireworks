@@ -89,15 +89,13 @@ def download_sound(filename, url):
             return None
     return sound_path
 
-# Add sound files setup
 SOUND_FILES = {
     'countdown': ('countdown.wav', 'https://assets.mixkit.co/active_storage/sfx/2568/2568.wav'),
-    'happy_new_year': ('happy_new_year.mp3', None),  # Local file
-    'firework_sound': ('fireworks.mp3', None),  # Local file
-    'background_music': ('happynewyear.mp3', None)  # Local file
+    'happy_new_year': ('happy_new_year.mp3', None),
+    'firework_sound': ('fireworks.mp3', None),
+    'background_music': ('happynewyear.mp3', None)
 }
 
-# Modified sound loading code
 sounds = {}
 pygame.mixer.init()
 for sound_name, (filename, url) in SOUND_FILES.items():
@@ -109,7 +107,7 @@ for sound_name, (filename, url) in SOUND_FILES.items():
         except:
             print(f"Warning: Could not load {sound_name} sound")
             sounds[sound_name] = None
-    elif url:  # Only download if URL is provided
+    elif url:
         sound_path = download_sound(filename, url)
         if sound_path and os.path.exists(sound_path):
             sounds[sound_name] = pygame.mixer.Sound(sound_path)
@@ -117,23 +115,22 @@ for sound_name, (filename, url) in SOUND_FILES.items():
             sounds[sound_name] = None
             print(f"Warning: Could not load {sound_name} sound")
 
-# Set volumes
 for sound_name, sound in sounds.items():
     if sound:
         if sound_name == 'firework_sound':
-            sound.set_volume(0.15)  # Reduced from 0.3 to 0.15 for quieter fireworks
+            sound.set_volume(0.15)
         elif sound_name == 'background_music':
-            sound.set_volume(0.6)  # Increased from 0.4 to 0.6 for louder background music
+            sound.set_volume(0.6)
         else:
-            sound.set_volume(0.5)  # Keep other sounds the same
+            sound.set_volume(0.5)
 
 class Firework:
     def __init__(self, x, y):
         self.x = x
         self.y = y
         self.color = random.choice(BRIGHT_COLORS)
-        self.radius = random.randint(4, 8)  # Larger initial radius
-        self.velocity = random.uniform(-10, -6)  # Faster launch
+        self.radius = random.randint(4, 8)
+        self.velocity = random.uniform(-10, -6)
         self.sparks = []
         self.name_sparks = []
         self.exploded = False
@@ -152,7 +149,6 @@ class Firework:
         self.exploded = True
         if sounds['firework_sound']:
             sounds['firework_sound'].play()
-        # Create more sparks for a denser explosion
         for _ in range(200):
             angle = random.uniform(0, 2 * math.pi)
             speed = random.uniform(3, 8)
@@ -163,7 +159,6 @@ class Firework:
         self.name = names[name_index]
         name_index = (name_index + 1) % len(names)
 
-        # Use the Vietnamese-supporting font
         self.font = VIETNAMESE_FONT
         self.text_color = self.color
         self.text_pos = (self.x, self.y - 40)
@@ -180,15 +175,12 @@ class Firework:
                 spark.update()
                 spark.draw(surface)
 
-            # Draw text with thicker outline for better readability of Vietnamese characters
             if hasattr(self, 'font'):
-                # Draw outline (black border) - made thicker for Vietnamese text
                 for offset_x, offset_y in [(-3,0), (3,0), (0,-3), (0,3), (-3,-3), (-3,3), (3,-3), (3,3)]:
                     text_outline = self.font.render(self.name, True, (0, 0, 0))
                     outline_rect = text_outline.get_rect(center=(self.text_pos[0] + offset_x, self.text_pos[1] + offset_y))
                     surface.blit(text_outline, outline_rect)
 
-                # Draw main text
                 text_surface = self.font.render(self.name, True, self.text_color)
                 text_rect = text_surface.get_rect(center=self.text_pos)
                 surface.blit(text_surface, text_rect)
@@ -212,11 +204,9 @@ class Spark:
 
     def draw(self, surface):
         if self.lifetime > 0:
-            # Create a glowing effect
             alpha = int((self.lifetime / self.original_lifetime) * 255)
             radius = max(1, self.size * (self.lifetime / self.original_lifetime))
 
-            # Draw multiple circles for glow effect
             for r in range(3):
                 glow_radius = radius * (3-r)/2
                 glow_alpha = alpha // (r+1)
@@ -242,7 +232,6 @@ class NameSpark:
     def draw(self, surface):
         if self.lifetime > 0:
             alpha = int((self.lifetime / self.original_lifetime) * 255)
-            # Create a glowing effect for text sparks
             for r in range(2):
                 glow_alpha = alpha // (r+1)
                 color = (*self.color[:3], glow_alpha)
@@ -256,21 +245,17 @@ clock = pygame.time.Clock()
 countdown_start_time = pygame.time.get_ticks()
 last_countdown_number = COUNTDOWN_DURATION + 1  # For countdown sound tracking
 
-# Add background music control
 background_music_started = False
 
 def draw_centered_text(text, y_position, color=WHITE, size=64):
-    # Create a new font with the desired size
     if size == 64:
-        font = VIETNAMESE_FONT  # Use existing font if size is default
+        font = VIETNAMESE_FONT
     else:
-        # Get the font path from the existing font and create a new one with different size
         font = pygame.font.Font(os.path.join('assets', 'NotoSans-Regular.ttf'), size)
     
     text_surface = font.render(text, True, color)
     text_rect = text_surface.get_rect(center=(WIDTH/2, y_position))
     
-    # Draw outline for better visibility
     outline_color = BLACK
     for offset_x, offset_y in [(-2,0), (2,0), (0,-2), (0,2)]:
         outline_surface = font.render(text, True, outline_color)
@@ -282,7 +267,6 @@ def draw_centered_text(text, y_position, color=WHITE, size=64):
 while running:
     current_time = pygame.time.get_ticks()
     
-    # Create a semi-transparent black overlay for better trail effect
     overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
     overlay.fill((0, 0, 0, 25))
     screen.blit(overlay, (0, 0))
@@ -295,7 +279,6 @@ while running:
         elapsed_time = (current_time - countdown_start_time) // 1000
         remaining_time = COUNTDOWN_DURATION - elapsed_time
         
-        # Play countdown sound when the number changes
         if remaining_time != last_countdown_number and remaining_time > 0:
             if sounds['countdown']:
                 sounds['countdown'].play()
@@ -311,21 +294,20 @@ while running:
                 sounds['happy_new_year'].play()
 
     elif show_new_year:
-        if current_time - new_year_start_time < 2000:  # Show for 2 seconds
+        if current_time - new_year_start_time < 2000:
             draw_centered_text("Happy New Year", HEIGHT//3, WHITE, 100)
             draw_centered_text("2025", HEIGHT//2, WHITE, 120)
         else:
             show_new_year = False
             fireworks_started = True
-            # Start background music when fireworks begin
             if sounds['background_music'] and not background_music_started:
-                sounds['background_music'].play(-1)  # -1 means loop indefinitely
+                sounds['background_music'].play(-1)
                 background_music_started = True
 
     elif fireworks_started:
         frame_count += 1
-        if frame_count % 90 == 0:  # Changed from 60 to 90 for slower firework launches
-            for _ in range(random.randint(1, 2)):  # Changed from (1, 3) to (1, 2) for fewer simultaneous fireworks
+        if frame_count % 90 == 0:
+            for _ in range(random.randint(1, 2)):
                 x = random.randint(100, WIDTH - 100)
                 fireworks.append(Firework(x, HEIGHT))
 
