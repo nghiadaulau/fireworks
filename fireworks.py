@@ -2,8 +2,20 @@ import pygame
 import random
 import sys
 import math
+import os
 
 pygame.init()
+
+# Create assets directory if it doesn't exist
+if not os.path.exists('assets'):
+    os.makedirs('assets')
+
+# Font setup for Vietnamese support
+def get_font():
+    # Try to load font from assets folder first
+    local_font = os.path.join('assets', 'NotoSans-Regular.ttf')
+
+VIETNAMESE_FONT = get_font()
 
 WIDTH, HEIGHT = 800, 600
 
@@ -31,7 +43,7 @@ pygame.display.set_caption("Fireworks Game")
 
 clock = pygame.time.Clock()
 
-names = ["Kai", "Kiera", "Anh Chung", "Vưnn"]
+names = ["Kai", "Kiera", "Anh Chung", "Vương"]  # Example with proper Vietnamese characters
 name_index = 0
 
 class Firework:
@@ -66,8 +78,8 @@ class Firework:
         self.name = names[name_index]
         name_index = (name_index + 1) % len(names)
 
-        # Store text rendering information for later use
-        self.font = pygame.font.Font(None, 64)  # Even larger font size
+        # Use the Vietnamese-supporting font
+        self.font = VIETNAMESE_FONT
         self.text_color = self.color
         self.text_pos = (self.x, self.y - 40)
 
@@ -82,15 +94,15 @@ class Firework:
             for spark in self.sparks:
                 spark.update()
                 spark.draw(surface)
-            
-            # Draw text with outline for better readability
+
+            # Draw text with thicker outline for better readability of Vietnamese characters
             if hasattr(self, 'font'):
-                # Draw outline (black border)
-                for offset_x, offset_y in [(-2,0), (2,0), (0,-2), (0,2), (-2,-2), (-2,2), (2,-2), (2,2)]:
+                # Draw outline (black border) - made thicker for Vietnamese text
+                for offset_x, offset_y in [(-3,0), (3,0), (0,-3), (0,3), (-3,-3), (-3,3), (3,-3), (3,3)]:
                     text_outline = self.font.render(self.name, True, (0, 0, 0))
                     outline_rect = text_outline.get_rect(center=(self.text_pos[0] + offset_x, self.text_pos[1] + offset_y))
                     surface.blit(text_outline, outline_rect)
-                
+
                 # Draw main text
                 text_surface = self.font.render(self.name, True, self.text_color)
                 text_rect = text_surface.get_rect(center=self.text_pos)
@@ -118,7 +130,7 @@ class Spark:
             # Create a glowing effect
             alpha = int((self.lifetime / self.original_lifetime) * 255)
             radius = max(1, self.size * (self.lifetime / self.original_lifetime))
-            
+
             # Draw multiple circles for glow effect
             for r in range(3):
                 glow_radius = radius * (3-r)/2
