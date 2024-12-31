@@ -63,7 +63,7 @@ BRIGHT_COLORS = [
 ]
 
 # Countdown state
-COUNTDOWN_DURATION = 10  # seconds
+COUNTDOWN_DURATION = 3  # seconds
 countdown_start_time = None
 show_countdown = True
 show_new_year = False
@@ -134,7 +134,9 @@ class Firework:
         self.sparks = []
         self.name_sparks = []
         self.exploded = False
-        self.explosion_radius = random.randint(20, 40)  # Control explosion size
+        self.explosion_radius = random.randint(20, 40)
+        # Chỉ 30% pháo hoa sẽ có tên
+        self.show_name = random.random() < 0.3
         if sounds['firework_sound']:
             sounds['firework_sound'].play()
 
@@ -149,19 +151,23 @@ class Firework:
         self.exploded = True
         if sounds['firework_sound']:
             sounds['firework_sound'].play()
-        for _ in range(200):
+        
+        # Tăng số lượng tia lửa lên
+        num_sparks = random.randint(200, 300)
+        for _ in range(num_sparks):
             angle = random.uniform(0, 2 * math.pi)
             speed = random.uniform(3, 8)
             vx = speed * math.cos(angle)
             vy = speed * math.sin(angle)
             self.sparks.append(Spark(self.x, self.y, vx, vy, self.color))
 
-        self.name = names[name_index]
-        name_index = (name_index + 1) % len(names)
-
-        self.font = VIETNAMESE_FONT
-        self.text_color = self.color
-        self.text_pos = (self.x, self.y - 40)
+        # Chỉ hiển thị tên nếu show_name là True
+        if self.show_name:
+            self.name = names[name_index]
+            name_index = (name_index + 1) % len(names)
+            self.font = VIETNAMESE_FONT
+            self.text_color = self.color
+            self.text_pos = (self.x, self.y - 40)
 
     def draw(self, surface):
         if not self.exploded:
@@ -175,7 +181,8 @@ class Firework:
                 spark.update()
                 spark.draw(surface)
 
-            if hasattr(self, 'font'):
+            # Chỉ vẽ tên nếu show_name là True và có thuộc tính font
+            if self.show_name and hasattr(self, 'font'):
                 for offset_x, offset_y in [(-3,0), (3,0), (0,-3), (0,3), (-3,-3), (-3,3), (3,-3), (3,3)]:
                     text_outline = self.font.render(self.name, True, (0, 0, 0))
                     outline_rect = text_outline.get_rect(center=(self.text_pos[0] + offset_x, self.text_pos[1] + offset_y))
@@ -306,8 +313,8 @@ while running:
 
     elif fireworks_started:
         frame_count += 1
-        if frame_count % 120 == 0:
-            for _ in range(random.randint(1, 2)):
+        if frame_count % 60 == 0:  # Giảm thời gian chờ giữa các đợt bắn (từ 120 xuống 60)
+            for _ in range(random.randint(2, 4)):  # Tăng số lượng pháo hoa mỗi đợt
                 x = random.randint(100, WIDTH - 100)
                 fireworks.append(Firework(x, HEIGHT))
 
