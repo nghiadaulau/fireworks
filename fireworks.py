@@ -74,7 +74,7 @@ pygame.display.set_caption("Fireworks Game")
 
 clock = pygame.time.Clock()
 
-names = ["Kai", "Kiera", "Anh Chung", "Vưnn", "Chí hùa hùa"]
+names = ["Actiup", "Sếp Tuấn", "Anh Tài", "Anh Chung", "Anh Duy", "Anh Vương", "Thành", "Nghĩa"]
 name_index = 0
 
 # Add after creating assets directory, before SOUND_FILES
