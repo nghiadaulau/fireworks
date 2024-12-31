@@ -3,6 +3,7 @@ import random
 import sys
 import math
 import os
+from urllib.request import urlretrieve
 
 pygame.init()
 
@@ -14,6 +15,29 @@ if not os.path.exists('assets'):
 def get_font():
     # Try to load font from assets folder first
     local_font = os.path.join('assets', 'NotoSans-Regular.ttf')
+
+    if os.path.exists(local_font):
+        return pygame.font.Font(local_font, 64)
+
+    # If font doesn't exist, download it
+    import urllib.request
+    font_url = "https://github.com/googlefonts/noto-fonts/raw/main/hinted/ttf/NotoSans/NotoSans-Regular.ttf"
+
+    try:
+        print("Downloading font file for Vietnamese support...")
+        urllib.request.urlretrieve(font_url, local_font)
+        return pygame.font.Font(local_font, 64)
+    except:
+        print("Warning: Could not download Vietnamese font. Falling back to system font.")
+        system_fonts = [
+            "arial.ttf",
+        ]
+
+        for font_path in system_fonts:
+            if os.path.exists(font_path):
+                return pygame.font.Font(font_path, 64)
+
+        return pygame.font.Font(None, 64)
 
 VIETNAMESE_FONT = get_font()
 
@@ -38,13 +62,70 @@ BRIGHT_COLORS = [
     (255, 200, 120),  # Bright orange
 ]
 
+# Countdown state
+COUNTDOWN_DURATION = 3  # seconds
+countdown_start_time = None
+show_countdown = True
+show_new_year = False
+fireworks_started = False
+
 screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.SRCALPHA)
 pygame.display.set_caption("Fireworks Game")
 
 clock = pygame.time.Clock()
 
-names = ["Kai", "Kiera", "Anh Chung", "Vương"]  # Example with proper Vietnamese characters
+names = ["Kai", "Kiera", "Anh Chung", "Vưnn"]  # Example with proper Vietnamese characters
 name_index = 0
+
+# Add after creating assets directory, before SOUND_FILES
+def download_sound(filename, url):
+    sound_path = os.path.join('assets', filename)
+    if not os.path.exists(sound_path):
+        print(f"Downloading {filename}...")
+        try:
+            urlretrieve(url, sound_path)
+        except Exception as e:
+            print(f"Failed to download {filename}: {e}")
+            return None
+    return sound_path
+
+# Add sound files setup
+SOUND_FILES = {
+    'countdown': ('countdown.wav', 'https://assets.mixkit.co/active_storage/sfx/2568/2568.wav'),
+    'happy_new_year': ('happy_new_year.mp3', None),  # Local file
+    'firework_sound': ('fireworks.mp3', None),  # Local file
+    'background_music': ('happynewyear.mp3', None)  # Local file
+}
+
+# Modified sound loading code
+sounds = {}
+pygame.mixer.init()
+for sound_name, (filename, url) in SOUND_FILES.items():
+    sound_path = os.path.join('assets', filename)
+    if os.path.exists(sound_path):
+        try:
+            sounds[sound_name] = pygame.mixer.Sound(sound_path)
+            print(f"Loaded {sound_name} sound from local file")
+        except:
+            print(f"Warning: Could not load {sound_name} sound")
+            sounds[sound_name] = None
+    elif url:  # Only download if URL is provided
+        sound_path = download_sound(filename, url)
+        if sound_path and os.path.exists(sound_path):
+            sounds[sound_name] = pygame.mixer.Sound(sound_path)
+        else:
+            sounds[sound_name] = None
+            print(f"Warning: Could not load {sound_name} sound")
+
+# Set volumes
+for sound_name, sound in sounds.items():
+    if sound:
+        if sound_name == 'firework_sound':
+            sound.set_volume(0.15)  # Reduced from 0.3 to 0.15 for quieter fireworks
+        elif sound_name == 'background_music':
+            sound.set_volume(0.6)  # Increased from 0.4 to 0.6 for louder background music
+        else:
+            sound.set_volume(0.5)  # Keep other sounds the same
 
 class Firework:
     def __init__(self, x, y):
@@ -57,6 +138,8 @@ class Firework:
         self.name_sparks = []
         self.exploded = False
         self.explosion_radius = random.randint(20, 40)  # Control explosion size
+        if sounds['firework_sound']:
+            sounds['firework_sound'].play()
 
     def update(self):
         if not self.exploded:
@@ -67,6 +150,8 @@ class Firework:
     def explode(self):
         global name_index
         self.exploded = True
+        if sounds['firework_sound']:
+            sounds['firework_sound'].play()
         # Create more sparks for a denser explosion
         for _ in range(200):
             angle = random.uniform(0, 2 * math.pi)
@@ -167,30 +252,91 @@ class NameSpark:
 fireworks = []
 frame_count = 0
 running = True
+clock = pygame.time.Clock()
+countdown_start_time = pygame.time.get_ticks()
+last_countdown_number = COUNTDOWN_DURATION + 1  # For countdown sound tracking
+
+# Add background music control
+background_music_started = False
+
+def draw_centered_text(text, y_position, color=WHITE, size=64):
+    # Create a new font with the desired size
+    if size == 64:
+        font = VIETNAMESE_FONT  # Use existing font if size is default
+    else:
+        # Get the font path from the existing font and create a new one with different size
+        font = pygame.font.Font(os.path.join('assets', 'NotoSans-Regular.ttf'), size)
+    
+    text_surface = font.render(text, True, color)
+    text_rect = text_surface.get_rect(center=(WIDTH/2, y_position))
+    
+    # Draw outline for better visibility
+    outline_color = BLACK
+    for offset_x, offset_y in [(-2,0), (2,0), (0,-2), (0,2)]:
+        outline_surface = font.render(text, True, outline_color)
+        outline_rect = outline_surface.get_rect(center=(WIDTH/2 + offset_x, y_position + offset_y))
+        screen.blit(outline_surface, outline_rect)
+    
+    screen.blit(text_surface, text_rect)
+
 while running:
+    current_time = pygame.time.get_ticks()
+    
     # Create a semi-transparent black overlay for better trail effect
     overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
-    overlay.fill((0, 0, 0, 25))  # Reduced alpha for longer trails
+    overlay.fill((0, 0, 0, 25))
     screen.blit(overlay, (0, 0))
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
 
-    frame_count += 1
-    if frame_count % 60 == 0:
-        for _ in range(random.randint(1, 3)):
-            x = random.randint(100, WIDTH - 100)
-            fireworks.append(Firework(x, HEIGHT))
+    if show_countdown:
+        elapsed_time = (current_time - countdown_start_time) // 1000
+        remaining_time = COUNTDOWN_DURATION - elapsed_time
+        
+        # Play countdown sound when the number changes
+        if remaining_time != last_countdown_number and remaining_time > 0:
+            if sounds['countdown']:
+                sounds['countdown'].play()
+            last_countdown_number = remaining_time
+        
+        if remaining_time > 0:
+            draw_centered_text(str(remaining_time), HEIGHT//2, WHITE, 120)
+        else:
+            show_countdown = False
+            show_new_year = True
+            new_year_start_time = current_time
+            if sounds['happy_new_year']:
+                sounds['happy_new_year'].play()
 
-    for firework in fireworks[:]:
-        firework.update()
-        firework.draw(screen)
-        if firework.exploded and all(spark.lifetime <= 0 for spark in firework.sparks):
-            fireworks.remove(firework)
+    elif show_new_year:
+        if current_time - new_year_start_time < 2000:  # Show for 2 seconds
+            draw_centered_text("Happy New Year", HEIGHT//3, WHITE, 100)
+            draw_centered_text("2025", HEIGHT//2, WHITE, 120)
+        else:
+            show_new_year = False
+            fireworks_started = True
+            # Start background music when fireworks begin
+            if sounds['background_music'] and not background_music_started:
+                sounds['background_music'].play(-1)  # -1 means loop indefinitely
+                background_music_started = True
+
+    elif fireworks_started:
+        frame_count += 1
+        if frame_count % 90 == 0:  # Changed from 60 to 90 for slower firework launches
+            for _ in range(random.randint(1, 2)):  # Changed from (1, 3) to (1, 2) for fewer simultaneous fireworks
+                x = random.randint(100, WIDTH - 100)
+                fireworks.append(Firework(x, HEIGHT))
+
+        for firework in fireworks[:]:
+            firework.update()
+            firework.draw(screen)
+            if firework.exploded and all(spark.lifetime <= 0 for spark in firework.sparks):
+                fireworks.remove(firework)
 
     pygame.display.flip()
-    clock.tick(30)
+    clock.tick(60)
 
 pygame.quit()
 sys.exit()
