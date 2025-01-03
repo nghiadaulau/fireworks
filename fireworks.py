@@ -62,6 +62,28 @@ BRIGHT_COLORS = [
     (255, 200, 120),  # Bright orange
 ]
 
+SCROLL_TEXT = "Trùm golang số 1 internet VN, chúc anh chị guộc năm mới vui vẻ 8386 vạn sự như ý triệu như mơ tỷ sự bất ngờ ngập tràn may mắn. Chúc gia đình mãi đỉnk mãi đỉnk"
+scroll_x = WIDTH
+SCROLL_SPEED = 2
+SCROLL_Y = 30
+scroll_font = pygame.font.Font(os.path.join('assets', 'NotoSans-Regular.ttf'), 36)  # Font nhỏ hơn cho chữ chạy
+
+def draw_scrolling_text(surface):
+    global scroll_x
+    
+    for offset_x, offset_y in [(-2,0), (2,0), (0,-2), (0,2), (-2,-2), (-2,2), (2,-2), (2,2)]:
+        text_outline = scroll_font.render(SCROLL_TEXT, True, BLACK)
+        surface.blit(text_outline, (scroll_x + offset_x, SCROLL_Y + offset_y))
+    
+    text_surface = scroll_font.render(SCROLL_TEXT, True, (255, 215, 0))  # Màu vàng
+    surface.blit(text_surface, (scroll_x, SCROLL_Y))
+    
+    scroll_x -= SCROLL_SPEED
+    
+    text_width = text_surface.get_width()
+    if scroll_x < -text_width:
+        scroll_x = WIDTH
+
 # Countdown state
 COUNTDOWN_DURATION = 3  # seconds
 countdown_start_time = None
@@ -74,7 +96,7 @@ pygame.display.set_caption("Fireworks Game")
 
 clock = pygame.time.Clock()
 
-names = ["Actiup", "Sếp Tuấn", "Anh Tài", "Anh Chung", "Anh Duy", "Anh Vương", "Thành", "Nghĩa"]
+names = ["Anh chai", "Chị guột"]
 name_index = 0
 
 # Add after creating assets directory, before SOUND_FILES
@@ -387,6 +409,9 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+
+    if fireworks_started:
+        draw_scrolling_text(screen)
 
     if show_countdown:
         elapsed_time = (current_time - countdown_start_time) // 1000
